@@ -59,8 +59,10 @@ void connectToWifi() {
     Serial.print("Connecting to WiFi ");
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    #ifdef ESP32
     // https://github.com/espressif/arduino-esp32/issues/3438
     WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
+    #endif
     setHostname(HOSTNAME);
 }
 

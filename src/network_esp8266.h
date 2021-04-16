@@ -39,4 +39,6 @@ void stopMqttReconnectTimer() {
 void setupWifi() {
     wifiConnectHandler = WiFi.onStationModeGotIP(esp8266_onWifiConnect);
     wifiDisconnectHandler = WiFi.onStationModeDisconnected(esp8266_onWifiDisconnect);
+
+    WiFi.persistent(false);
 }

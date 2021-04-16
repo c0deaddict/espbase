@@ -1,6 +1,11 @@
 #include "espbase.h"
 #include <AsyncJson.h>
 
+#ifdef ESP8266
+#include <Ticker.h>
+Ticker restartTimer;
+#endif
+
 AsyncWebServer http(80);
 
 void handleGetMetrics(AsyncWebServerRequest *request) {
@@ -48,10 +53,10 @@ void handleRestart(AsyncWebServerRequest *request) {
     request->send(200, "text/plain", "Ok");
     #ifdef ESP32
     vTaskDelay(pdMS_TO_TICKS(100));
-    #else
-    delay(100);
-    #endif
     ESP.restart();
+    #else
+    restartTimer.once_ms(100, [](){ ESP.restart(); });
+    #endif
 }
 
 void setupHttp() {

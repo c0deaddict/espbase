@@ -17,9 +17,9 @@ const MetricProxy version(
     "esp_version", "gauge",
     "ESP version (8266 or 32) and some other metadata.",
     [](const char *name, Print *out) {
-        out->printf("%s{sdk=\"%s\",chipid=%d} %u\n",
+        out->printf("%s{sdk=\"%s\"} %u\n",
+                    name,
                     ESP.getSdkVersion(),
-                    ESP.getChipId(),
                     ESP_VERSION);
     }
 );
@@ -32,6 +32,7 @@ const MetricProxy freeHeap(
     }
 );
 
+#ifdef ESP8266
 const MetricProxy heapFragmentation(
     "esp_heap_fragmentation", "gauge",
     "Percentage of heap fragmentation (0-100).",
@@ -39,6 +40,7 @@ const MetricProxy heapFragmentation(
         out->printf("%s %u\n", name, ESP.getHeapFragmentation());
     }
 );
+#endif
 
 #ifdef ESP32
 const MetricProxy heapSize(
