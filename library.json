@@ -1,0 +1,46 @@
+{
+    "name":"espbase",
+    "description":"Project base for ESP8266 or ESP32",
+    "keywords":"esp32,esp8266",
+    "authors":
+    {
+        "name": "Jos van Bakel",
+        "maintainer": true
+    },
+    "repository":
+    {
+        "type": "git",
+        "url": "https://github.com/c0deaddict/espbase.git"
+    },
+    "version": "1.0.0",
+    "license": "LGPL-3.0",
+    "frameworks": "arduino",
+    "platforms": ["espressif8266", "espressif32"],
+    "dependencies": [
+        {
+            "owner": "arduino-libraries",
+            "name": "NTPClient",
+            "version": "^3.1.0"
+        },
+        {
+            "owner": "bblanchon",
+            "name": "ArduinoJson",
+            "version": "^6.17.3"
+        },
+        {
+            "owner": "bblanchon",
+            "name": "StreamUtils",
+            "version": "^1.6.0"
+        },
+        {
+            "owner": "ottowinter",
+            "name": "AsyncMqttClient-esphome",
+            "version": "^0.8.4"
+        },
+        {
+            "owner": "ottowinter",
+            "name": "ESPAsyncWebServer-esphome",
+            "version": "^1.2.7"
+        }
+    ]
+}
