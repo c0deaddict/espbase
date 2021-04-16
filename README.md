@@ -41,6 +41,24 @@ void loop() {
 }
 ```
 
+## HTTP
+
+HTTP handlers must be registered before calling `setupEspbase`, for example:
+
+```c
+#include <espbase.h>
+
+void setup() {
+    Serial.begin(115200);
+
+    setupEspbase();
+}
+
+void loop() {
+    handleEspbase();
+}
+```
+
 ## MQTT
 
 If you want to subscribe to MQTT messages, you must do so before calling

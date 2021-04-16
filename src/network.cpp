@@ -1,6 +1,12 @@
 #include "config.h"
 #include "espbase.h"
 
+#ifdef ESP32
+#include "network_esp32.h"
+#else
+#include "network_esp8266.h"
+#endif
+
 const long utcOffsetSeconds = 3600;
 WiFiUDP ntpUDP;
 NTPClient ntp(NTPClient(ntpUDP, "europe.pool.ntp.org", utcOffsetSeconds));
@@ -18,8 +24,6 @@ MetricProxy wifiRssi(
 
 #ifdef MQTT_HOST
 AsyncMqttClient mqtt;
-TimerHandle_t wifiReconnectTimer;
-TimerHandle_t mqttReconnectTimer;
 Counter mqttDisconnected("esp_mqtt_disconnected", "Number of times MQTT is disconnected.");
 
 String mqttDisconnectReasonToStr(AsyncMqttClientDisconnectReason reason) {
@@ -46,7 +50,7 @@ void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
     Serial.println("Disconnected from MQTT.");
 
     if (WiFi.isConnected()) {
-        xTimerStart(mqttReconnectTimer, 0);
+        startMqttReconnectTimer();
     }
 }
 #endif // MQTT_HOST
@@ -57,52 +61,48 @@ void connectToWifi() {
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     // https://github.com/espressif/arduino-esp32/issues/3438
     WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
-    WiFi.setHostname(HOSTNAME);
+    setHostname(HOSTNAME);
 }
 
-void onWifiEvent(WiFiEvent_t event) {
-    Serial.printf("[WiFi-event] event: %d\n\r", event);
-    switch(event) {
-    case SYSTEM_EVENT_STA_GOT_IP:
-        Serial.println("WiFi connected");
-        Serial.println("IP address: ");
-        Serial.println(WiFi.localIP());
+void onWifiConnect() {
+    Serial.println("WiFi connected");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP());
 
-        Serial.print("Signal strength (RSSI): ");
-        Serial.print(WiFi.RSSI());
-        Serial.println(" dBm");
+    Serial.print("Signal strength (RSSI): ");
+    Serial.print(WiFi.RSSI());
+    Serial.println(" dBm");
 
-        #ifdef MQTT_HOST
-        connectToMqtt();
-        #endif
-        break;
+    #ifdef MQTT_HOST
+    connectToMqtt();
+    #endif
+}
 
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-        wifiDisconnected.inc();
-        Serial.println("WiFi lost connection");
-        #ifdef MQTT_HOST
-        xTimerStop(mqttReconnectTimer, 0); // ensure we don't reconnect to MQTT while reconnecting to Wi-Fi
-        #endif
-        xTimerStart(wifiReconnectTimer, 0);
-        break;
+void onWifiDisconnect() {
+    wifiDisconnected.inc();
+    Serial.println("WiFi lost connection");
+    #ifdef MQTT_HOST
+    stopMqttReconnectTimer(); // ensure we don't reconnect to MQTT while reconnecting to Wi-Fi
+    #endif
 
-    default:
-        break;
-    }
+    startWifiReconnectTimer();
 }
 
 void setupNetwork() {
     Serial.println("Setting up network..");
 
+    setupWifi();
+
     #ifdef MQTT_HOST
-    mqttReconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectToMqtt));
     mqtt.onDisconnect(onMqttDisconnect);
     mqtt.setCredentials(MQTT_USER, MQTT_PASSWORD);
     mqtt.setServer(MQTT_HOST, MQTT_PORT);
     #endif
 
-    wifiReconnectTimer = xTimerCreate("wifiTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectToWifi));
-    WiFi.onEvent(onWifiEvent);
     connectToWifi();
     ntp.begin();
+}
+
+void handleNetwork() {
+    ntp.update();
 }

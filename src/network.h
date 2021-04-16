@@ -7,10 +7,11 @@ extern "C" {
 	#include "freertos/FreeRTOS.h"
 	#include "freertos/timers.h"
 }
-#elif defined(ESP8266)
+#elif ESP8266
 #include <ESP8266WiFi.h>
 #include <Ticker.h>
 #include <ESPAsyncTCP.h>
+#include <WiFiUdp.h>
 #endif
 
 #include <ESPAsyncWebServer.h>

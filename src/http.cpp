@@ -44,32 +44,13 @@ void handlePostSettings(AsyncWebServerRequest *request, JsonVariant &json) {
     request->send(200, "application/json", getSettingsAsJson());
 }
 
-void handlePostMotion(AsyncWebServerRequest *request) {
-    mode->onMotionChange(true);
-    request->send(200, "text/plain", "Ok");
-}
-
-void handleGetNames(AsyncWebServerRequest *request) {
-    AsyncJsonResponse * response = new AsyncJsonResponse();
-    JsonObject root = response->getRoot();
-
-    JsonArray modesJson = root.createNestedArray("modes");
-    for (int i = 0; i < MAX_MODES && modesList[i] != NULL; i++) {
-        modesJson.add(modesList[i]->name);
-    }
-
-    JsonArray animationsJson = root.createNestedArray("animations");
-    for (int i = 0; i < MAX_ANIMATIONS && animationsList[i] != NULL; i++) {
-        animationsJson.add(animationsList[i]->name);
-    }
-
-    response->setLength();
-    request->send(response);
-}
-
 void handleRestart(AsyncWebServerRequest *request) {
     request->send(200, "text/plain", "Ok");
+    #ifdef ESP32
     vTaskDelay(pdMS_TO_TICKS(100));
+    #else
+    delay(100);
+    #endif
     ESP.restart();
 }
 
@@ -77,8 +58,6 @@ void setupHttp() {
     http.on("/metrics", HTTP_GET, handleGetMetrics);
     http.on("/control", HTTP_POST, handlePostControl);
     http.on("/settings", HTTP_GET, handleGetSettings);
-    http.on("/motion", HTTP_POST, handlePostMotion);
-    http.on("/names", HTTP_GET, handleGetNames);
     http.on("/restart", HTTP_POST, handleRestart);
 
     AsyncCallbackJsonWebHandler* postSettings =
