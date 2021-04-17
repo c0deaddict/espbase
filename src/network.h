@@ -23,6 +23,8 @@ extern "C" {
 extern AsyncMqttClient mqtt;
 #endif
 
+#ifdef USE_NTP
 extern NTPClient ntp;
+#endif
 
 extern AsyncWebServer http;

@@ -41,6 +41,12 @@ void loop() {
 }
 ```
 
+## NTP
+
+NTP is disabled by default. Enable it by defining `USE_NTP` in your config.h.
+The ESP8266 seems to have a limit of 1 listening UDP socket, so if you want to
+use that in your application you must disable NTP.
+
 ## HTTP
 
 HTTP handlers must be registered before calling `setupEspbase`, for example:
@@ -48,14 +54,22 @@ HTTP handlers must be registered before calling `setupEspbase`, for example:
 ```c
 #include <espbase.h>
 
+void handleGetTime(AsyncWebServerRequest *request);
+
 void setup() {
     Serial.begin(115200);
+
+    http.on("/time", HTTP_GET, handleGetTime);
 
     setupEspbase();
 }
 
 void loop() {
     handleEspbase();
+}
+
+void handleGetTime(AsyncWebServerRequest *request) {
+    request->send(200, "text/plain", ntp.getFormattedTime().c_str());
 }
 ```
 

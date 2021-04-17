@@ -12,3 +12,6 @@
 #define MQTT_PORT 1883
 #define MQTT_USER "espbase"
 #define MQTT_PASSWORD "password123"
+
+// Optional.
+#define USE_NTP

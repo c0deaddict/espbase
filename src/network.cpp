@@ -7,9 +7,11 @@
 #include "network_esp8266.h"
 #endif
 
+#ifdef USE_NTP
 const long utcOffsetSeconds = 3600;
 WiFiUDP ntpUDP;
 NTPClient ntp(NTPClient(ntpUDP, "europe.pool.ntp.org", utcOffsetSeconds));
+#endif
 
 Counter wifiDisconnected("esp_wifi_disconnected", "Number of times WiFi is diconnected.");
 
@@ -102,9 +104,14 @@ void setupNetwork() {
     #endif
 
     connectToWifi();
+
+    #ifdef USE_NTP
     ntp.begin();
+    #endif
 }
 
 void handleNetwork() {
+    #ifdef USE_NTP
     ntp.update();
+    #endif
 }
