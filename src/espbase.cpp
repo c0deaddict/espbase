@@ -8,8 +8,6 @@ void handleOta();
 void loadSettings();
 
 void setupEspbase() {
-    Serial.begin(115200);
-
     setupNetwork();
     setupOta();
     setupHttp();
