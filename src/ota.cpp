@@ -2,14 +2,17 @@
 
 #include "config.h"
 
+extern void stop();
+
 void setupOta() {
     ArduinoOTA.setPort(8266);
     ArduinoOTA.setHostname(HOSTNAME);
     ArduinoOTA.setPassword(OTA_PASSWORD);
-    // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
-    // ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
 
     ArduinoOTA.onStart([]() {
+        // Prepare for uploading.
+        stop();
+
         String type;
         if (ArduinoOTA.getCommand() == U_FLASH)
             type = "sketch";
