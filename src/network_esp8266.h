@@ -23,12 +23,12 @@ void esp8266_onWifiDisconnect(const WiFiEventStationModeDisconnected& event) {
 }
 
 #ifdef MQTT_HOST
-void mqttReconnect();
+void connectToMqtt();
 
 Ticker mqttReconnectTimer;
 
 void startMqttReconnectTimer() {
-    mqttReconnectTimer.once(2, mqttReconnect);
+    mqttReconnectTimer.once(2, connectToMqtt);
 }
 
 void stopMqttReconnectTimer() {
