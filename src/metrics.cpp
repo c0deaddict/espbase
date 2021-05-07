@@ -68,7 +68,7 @@ const MetricProxy uptime(
         #ifdef ESP32
         time = esp_timer_get_time();
         #else
-        time = 1000L * (uint64_t)system_get_time();
+        time = (uint64_t)system_get_time();
         #endif
         out->printf("%s %lld\n", name, time);
     }
