@@ -2,6 +2,10 @@
 
 #include "config.h"
 
+#ifdef MQTT_HOST
+#include "mqtt.h"
+#endif
+
 extern void stop();
 
 void setupOta() {
@@ -12,6 +16,10 @@ void setupOta() {
     ArduinoOTA.onStart([]() {
         // Prepare for uploading.
         stop();
+
+        #ifdef MQTT_HOST
+        disconnectMqtt();
+        #endif
 
         String type;
         if (ArduinoOTA.getCommand() == U_FLASH)

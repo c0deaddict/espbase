@@ -58,6 +58,10 @@ void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
     }
 }
 
+void disconnectMqtt() {
+    mqtt.disconnect();
+}
+
 void setupMqtt() {
     #ifdef ESP32
     mqttReconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectToMqtt));
