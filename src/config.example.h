@@ -15,9 +15,7 @@
 
 // Optional InfluxDB.
 #define INFLUXDB_URL "http://127.0.0.1:8086"
-#define INFLUXDB_TOKEN "user:pass"
-#define INFLUXDB_ORG "org name/id"
-#define INFLUXDB_BUCKET "metrics"
+#define INFLUXDB_DB "metrics"
 
 // Optional NTP.
 #define USE_NTP

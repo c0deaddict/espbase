@@ -18,7 +18,7 @@ NTPClient ntp(NTPClient(ntpUDP, "europe.pool.ntp.org", utcOffsetSeconds));
 #endif
 
 #ifdef INFLUXDB_URL
-InfluxDBClient influx(INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN);
+InfluxDBClient influx(INFLUXDB_URL, INFLUXDB_DB);
 #endif
 
 Counter wifiDisconnected("esp_wifi_disconnected", "Number of times WiFi is diconnected.");

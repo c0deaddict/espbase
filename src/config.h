@@ -40,16 +40,8 @@
 // InfluxDB is optional.
 #ifdef INFLUXDB_URL
 
-#ifndef INFLUXDB_TOKEN
-#define INFLUXDB_TOKEN ""
-#endif
-
-#ifndef INFLUXDB_ORG
-#define INFLUXDB_ORG ""
-#endif
-
-#ifndef INFLUXDB_BUCKET
-#error "INFLUXDB_BUCKET is not configured"
+#ifndef INFLUXDB_DB
+#error "INFLUXDB_DB is not configured"
 #endif
 
 #endif // INFLUXDB_URL
