@@ -41,6 +41,11 @@
             "owner": "ottowinter",
             "name": "ESPAsyncWebServer-esphome",
             "version": "^1.2.7"
+        },
+        {
+            "owner": "tobiasschuerg",
+            "name": "ESP8266 Influxdb",
+            "version": "^3.8.0"
         }
     ]
 }

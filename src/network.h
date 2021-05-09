@@ -17,14 +17,19 @@ extern "C" {
 #include <ESPAsyncWebServer.h>
 
 #include <AsyncMqttClient.h>
-#include <NTPClient.h>
 
 #ifdef MQTT_HOST
 extern AsyncMqttClient mqtt;
 #endif
 
 #ifdef USE_NTP
+#include <NTPClient.h>
 extern NTPClient ntp;
+#endif
+
+#ifdef INFLUXDB_URL
+#include <InfluxDbClient.h>
+extern InfluxDBClient influx;
 #endif
 
 extern AsyncWebServer http;

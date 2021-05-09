@@ -1,6 +1,10 @@
 #include "config.h"
 #include "espbase.h"
 
+#ifdef MQTT_HOST
+#include "mqtt.h"
+#endif
+
 #ifdef ESP32
 #include "network_esp32.h"
 #else
@@ -13,6 +17,10 @@ WiFiUDP ntpUDP;
 NTPClient ntp(NTPClient(ntpUDP, "europe.pool.ntp.org", utcOffsetSeconds));
 #endif
 
+#ifdef INFLUXDB_URL
+InfluxDBClient influx(INFLUXDB_URL, INFLUXDB_ORG, INFLUXDB_BUCKET, INFLUXDB_TOKEN);
+#endif
+
 Counter wifiDisconnected("esp_wifi_disconnected", "Number of times WiFi is diconnected.");
 
 MetricProxy wifiRssi(
@@ -23,39 +31,6 @@ MetricProxy wifiRssi(
         out->printf("%s %d\n", name, WiFi.RSSI());
     }
 );
-
-#ifdef MQTT_HOST
-AsyncMqttClient mqtt;
-Counter mqttDisconnected("esp_mqtt_disconnected", "Number of times MQTT is disconnected.");
-
-String mqttDisconnectReasonToStr(AsyncMqttClientDisconnectReason reason) {
-    switch (reason) {
-    case AsyncMqttClientDisconnectReason::TCP_DISCONNECTED: return "TCP_DISCONNECTED";
-    case AsyncMqttClientDisconnectReason::MQTT_UNACCEPTABLE_PROTOCOL_VERSION: return "MQTT_UNACCEPTABLE_PROTOCOL_VERSION";
-    case AsyncMqttClientDisconnectReason::MQTT_IDENTIFIER_REJECTED: return "MQTT_IDENTIFIER_REJECTED";
-    case AsyncMqttClientDisconnectReason::MQTT_SERVER_UNAVAILABLE: return "MQTT_SERVER_UNAVAILABLE";
-    case AsyncMqttClientDisconnectReason::MQTT_MALFORMED_CREDENTIALS: return "MQTT_MALFORMED_CREDENTIALS";
-    case AsyncMqttClientDisconnectReason::MQTT_NOT_AUTHORIZED: return "MQTT_NOT_AUTHORIZED";
-    case AsyncMqttClientDisconnectReason::ESP8266_NOT_ENOUGH_SPACE: return "ESP8266_NOT_ENOUGH_SPACE";
-    case AsyncMqttClientDisconnectReason::TLS_BAD_FINGERPRINT: return "TLS_BAD_FINGERPRINT";
-    default: return "unknown";
-    }
-}
-
-void connectToMqtt() {
-    Serial.println("Connecting to MQTT...");
-    mqtt.connect();
-}
-
-void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
-    mqttDisconnected.inc();
-    Serial.println("Disconnected from MQTT.");
-
-    if (WiFi.isConnected()) {
-        startMqttReconnectTimer();
-    }
-}
-#endif // MQTT_HOST
 
 void connectToWifi() {
     Serial.print("Connecting to WiFi ");
@@ -80,6 +55,17 @@ void onWifiConnect() {
     #ifdef MQTT_HOST
     connectToMqtt();
     #endif
+
+    #ifdef INFLUXDB_URL
+    // Check server connection
+    if (influx.validateConnection()) {
+        Serial.print("Connected to InfluxDB: ");
+        Serial.println(influx.getServerUrl());
+    } else {
+        Serial.print("InfluxDB connection failed: ");
+        Serial.println(influx.getLastErrorMessage());
+    }
+    #endif
 }
 
 void onWifiDisconnect() {
@@ -95,13 +81,8 @@ void onWifiDisconnect() {
 void setupNetwork() {
     Serial.println("Setting up network..");
 
+    setupMqtt();
     setupWifi();
-
-    #ifdef MQTT_HOST
-    mqtt.onDisconnect(onMqttDisconnect);
-    mqtt.setCredentials(MQTT_USER, MQTT_PASSWORD);
-    mqtt.setServer(MQTT_HOST, MQTT_PORT);
-    #endif
 
     connectToWifi();
 

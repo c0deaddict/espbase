@@ -39,6 +39,10 @@ void setup() {
 void loop() {
     handleEspbase();
 }
+
+void stop() {
+    // Called before OTA is started, detach interrupts and stop timers.
+}
 ```
 
 ## NTP

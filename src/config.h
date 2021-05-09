@@ -35,4 +35,21 @@
 #define MQTT_PORT 1883
 #endif
 
+#endif // MQTT_HOST
+
+// InfluxDB is optional.
+#ifdef INFLUXDB_URL
+
+#ifndef INFLUXDB_TOKEN
+#define INFLUXDB_TOKEN ""
 #endif
+
+#ifndef INFLUXDB_ORG
+#define INFLUXDB_ORG ""
+#endif
+
+#ifndef INFLUXDB_BUCKET
+#error "INFLUXDB_BUCKET is not configured"
+#endif
+
+#endif // INFLUXDB_URL

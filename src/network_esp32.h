@@ -12,20 +12,6 @@ void setHostname(const char *hostname) {
     WiFi.setHostname(hostname);
 }
 
-#ifdef MQTT_HOST
-void connectToMqtt();
-
-TimerHandle_t mqttReconnectTimer;
-
-void startMqttReconnectTimer() {
-    xTimerStart(mqttReconnectTimer, 0);
-}
-
-void stopMqttReconnectTimer() {
-    xTimerStop(mqttReconnectTimer, 0);
-}
-#endif
-
 void onWifiEvent(WiFiEvent_t event) {
     Serial.printf("[WiFi-event] event: %d\n\r", event);
 
@@ -44,9 +30,6 @@ void onWifiEvent(WiFiEvent_t event) {
 }
 
 void setupWifi() {
-    #ifdef MQTT_HOST
-    mqttReconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectToMqtt));
-    #endif
     wifiReconnectTimer = xTimerCreate("wifiTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectToWifi));
 
     WiFi.onEvent(onWifiEvent);
