@@ -23,4 +23,4 @@ void saveSettings();
 bool setSetting(const char *name, JsonVariant value);
 String getSettingsAsJson();
 bool mergeSettings(JsonObject *object);
-bool mergeSettings(const char *object);
+bool mergeSettings(const char *str, size_t len);

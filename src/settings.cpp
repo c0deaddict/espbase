@@ -88,9 +88,9 @@ bool mergeSettings(JsonObject *object) {
     return ok;
 }
 
-bool mergeSettings(const char *str) {
+bool mergeSettings(const char *str, size_t len) {
     DynamicJsonDocument doc(SETTINGS_MAX_SIZE);
-    DeserializationError err = deserializeJson(doc, str);
+    DeserializationError err = deserializeJson(doc, str, len);
     if (err) {
         Serial.print(F("mergeSettings: deserializeJson() failed: "));
         Serial.println(err.c_str());
