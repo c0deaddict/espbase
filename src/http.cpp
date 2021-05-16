@@ -39,7 +39,8 @@ void handleGetSettings(AsyncWebServerRequest *request) {
 }
 
 void handlePostSettings(AsyncWebServerRequest *request, JsonVariant &json) {
-    if (mergeSettings(&json.as<JsonObject>())) {
+    JsonObject obj = json.as<JsonObject>();
+    if (mergeSettings(&obj)) {
         saveSettings();
     }
     request->send(200, "application/json", getSettingsAsJson());

@@ -81,7 +81,10 @@ void onWifiDisconnect() {
 void setupNetwork() {
     Serial.println("Setting up network..");
 
+    #ifdef MQTT_HOST
     setupMqtt();
+    #endif
+
     setupWifi();
 
     connectToWifi();

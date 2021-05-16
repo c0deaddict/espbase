@@ -45,7 +45,8 @@ void loadSettings() {
         serializeJson(doc, Serial);
         Serial.println();
 
-        mergeSettings(&doc.as<JsonObject>());
+        JsonObject obj = doc.as<JsonObject>();
+        mergeSettings(&obj);
     }
 }
 
@@ -96,7 +97,8 @@ bool mergeSettings(const char *str) {
         return false;
     }
 
-    return mergeSettings(&doc.as<JsonObject>());
+    JsonObject obj = doc.as<JsonObject>();
+    return mergeSettings(&obj);
 }
 
 String getSettingsAsJson() {
