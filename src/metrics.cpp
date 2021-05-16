@@ -9,6 +9,8 @@
 extern "C"{
   #include "user_interface.h"
 }
+
+extern uint64_t micros64();
 #endif
 
 Metric* Metric::head = NULL;
@@ -68,7 +70,7 @@ const MetricProxy uptime(
         #ifdef ESP32
         time = esp_timer_get_time();
         #else
-        time = (uint64_t)system_get_time();
+        time = (uint64_t)micros64();
         #endif
         out->printf("%s %lld\n", name, time);
     }

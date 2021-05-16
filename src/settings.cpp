@@ -21,8 +21,6 @@ Setting::Setting(const char *name, SettingSetDefaultFn setDefault, SettingChange
     head = this;
 }
 
-// settings["lightThreshold"] = 100;
-
 void loadSettings() {
     EEPROM.begin(SETTINGS_MAX_SIZE);
 
@@ -47,9 +45,7 @@ void loadSettings() {
         serializeJson(doc, Serial);
         Serial.println();
 
-        for (auto kvp : doc.as<JsonObject>()) {
-            setSetting(kvp.key().c_str(), kvp.value());
-        }
+        mergeSettings(&doc.as<JsonObject>());
     }
 }
 
@@ -81,6 +77,26 @@ bool setSetting(const char *name, JsonVariant value) {
 
     Serial.printf("Trying to set undefined setting %s\n\r", name);
     return false;
+}
+
+bool mergeSettings(JsonObject *object) {
+    bool ok = false;
+    for (auto kvp : *object) {
+        ok |= setSetting(kvp.key().c_str(), kvp.value());
+    }
+    return ok;
+}
+
+bool mergeSettings(const char *str) {
+    DynamicJsonDocument doc(SETTINGS_MAX_SIZE);
+    DeserializationError err = deserializeJson(doc, str);
+    if (err) {
+        Serial.print(F("mergeSettings: deserializeJson() failed: "));
+        Serial.println(err.c_str());
+        return false;
+    }
+
+    return mergeSettings(&doc.as<JsonObject>());
 }
 
 String getSettingsAsJson() {

@@ -39,11 +39,7 @@ void handleGetSettings(AsyncWebServerRequest *request) {
 }
 
 void handlePostSettings(AsyncWebServerRequest *request, JsonVariant &json) {
-    bool save = false;
-    for (auto kvp : json.as<JsonObject>()) {
-        save |= setSetting(kvp.key().c_str(), kvp.value());
-    }
-    if (save) {
+    if (mergeSettings(&json.as<JsonObject>())) {
         saveSettings();
     }
     request->send(200, "application/json", getSettingsAsJson());
