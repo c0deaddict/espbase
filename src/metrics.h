@@ -100,6 +100,49 @@ public:
     void set(long long i) {
         value = i;
     }
-};    
+};
+
+class Histogram : public Metric {
+protected:
+    unsigned int numBuckets;
+    unsigned long long *buckets;
+    unsigned int *bucketCounts;
+    unsigned int infBucketCount;
+    unsigned int count;
+    unsigned long long sum;
+
+    void write(Print *out) const {
+        for (unsigned int i = 0; i < numBuckets; i++) {
+            out->printf("%s_bucket{le=\"%llu\"} %u\n", name, buckets[i], bucketCounts[i]);
+        }
+        out->printf("%s_bucket{le=\"+Inf\"} %u\n", name, infBucketCount);
+        out->printf("%s_count %u\n", name, count);
+        out->printf("%s_sum %llu\n", name, sum);
+    }
+
+public:
+    Histogram(const char *name, const char *help, unsigned int numBuckets,
+              unsigned long long *buckets)
+        : Metric(name, "histogram", help)
+        , numBuckets(numBuckets)
+        , buckets(buckets)
+    {
+        bucketCounts = (unsigned int *)malloc(sizeof(unsigned int) * numBuckets);
+        for (unsigned int i = 0; i < numBuckets; i++) {
+            bucketCounts[i] = 0;
+        }
+    }
+
+    void observe(unsigned long long value) {
+        for (unsigned int i = 0; i < numBuckets; i++) {
+            if (value > buckets[i]) goto match;
+            bucketCounts[i]++;
+        }
+        infBucketCount++;
+    match:
+        count++;
+        sum += value;
+    }
+};
 
 void printMetrics(Print *out);

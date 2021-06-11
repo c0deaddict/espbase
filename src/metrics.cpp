@@ -26,6 +26,16 @@ const MetricProxy version(
     }
 );
 
+const MetricProxy firmware(
+    "esp_firmware", "gauge",
+    "ESP firmware (sketch).",
+    [](const char *name, Print *out) {
+        out->printf("%s{md5=\"%s\"} 1\n",
+                    name,
+                    ESP.getSketchMD5().c_str());
+    }
+);
+
 const MetricProxy freeHeap(
     "esp_free_heap", "gauge",
     "Current size of free heap memory in bytes.",
