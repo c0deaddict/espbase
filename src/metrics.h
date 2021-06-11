@@ -107,7 +107,6 @@ protected:
     unsigned int numBuckets;
     unsigned long long *buckets;
     unsigned int *bucketCounts;
-    unsigned int infBucketCount;
     unsigned int count;
     unsigned long long sum;
 
@@ -115,7 +114,7 @@ protected:
         for (unsigned int i = 0; i < numBuckets; i++) {
             out->printf("%s_bucket{le=\"%llu\"} %u\n", name, buckets[i], bucketCounts[i]);
         }
-        out->printf("%s_bucket{le=\"+Inf\"} %u\n", name, infBucketCount);
+        out->printf("%s_bucket{le=\"+Inf\"} %u\n", name, count);
         out->printf("%s_count %u\n", name, count);
         out->printf("%s_sum %llu\n", name, sum);
     }
@@ -135,11 +134,9 @@ public:
 
     void observe(unsigned long long value) {
         for (unsigned int i = 0; i < numBuckets; i++) {
-            if (value > buckets[i]) goto match;
-            bucketCounts[i]++;
+            if (value <= buckets[i]) bucketCounts[i]++;
         }
-        infBucketCount++;
-    match:
+
         count++;
         sum += value;
     }
