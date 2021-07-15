@@ -1,10 +1,10 @@
 #include <Arduino.h>
 #include <StreamUtils.h>
 
+#include "config.h"
 #include "settings.h"
 
 #define SETTINGS_VERSION 1
-#define SETTINGS_MAX_SIZE 1024
 
 DynamicJsonDocument settings(SETTINGS_MAX_SIZE);
 

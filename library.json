@@ -25,17 +25,17 @@
         {
             "owner": "bblanchon",
             "name": "ArduinoJson",
-            "version": "^6.17.3"
+            "version": "^6.18.1"
         },
         {
             "owner": "bblanchon",
             "name": "StreamUtils",
-            "version": "^1.6.0"
+            "version": "^1.6.1"
         },
         {
             "owner": "ottowinter",
             "name": "AsyncMqttClient-esphome",
-            "version": "^0.8.4"
+            "version": "^0.8.5"
         },
         {
             "owner": "ottowinter",
