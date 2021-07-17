@@ -31,11 +31,15 @@ void handlePostControl(AsyncWebServerRequest *request) {
         }
     }
 
-    request->send(200, "application/json", getSettingsAsJson());
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    printSettings(*response);
+    request->send(response);
 }
 
 void handleGetSettings(AsyncWebServerRequest *request) {
-    request->send(200, "application/json", getSettingsAsJson());
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    printSettings(*response);
+    request->send(response);
 }
 
 void handlePostSettings(AsyncWebServerRequest *request, JsonVariant &json) {
@@ -43,7 +47,10 @@ void handlePostSettings(AsyncWebServerRequest *request, JsonVariant &json) {
     if (mergeSettings(&obj)) {
         saveSettings();
     }
-    request->send(200, "application/json", getSettingsAsJson());
+
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    printSettings(*response);
+    request->send(response);
 }
 
 void handleRestart(AsyncWebServerRequest *request) {

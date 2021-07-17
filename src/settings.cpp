@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "settings.h"
+#include "metrics.h"
 
 #define SETTINGS_VERSION 1
 
@@ -70,7 +71,9 @@ bool setSetting(const char *name, JsonVariant value) {
                 Serial.printf("Invalid value '%s' for setting %s\n\r", serializedValue.c_str(), name);
                 return false;
             } else {
-                settings[name] = value;
+                // NOTE: must use `s->name` here since `name` points to memory
+                // that could be freed after this call.
+                settings[s->name] = value;
                 return true;
             }
         }
@@ -101,8 +104,14 @@ bool mergeSettings(const char *str, size_t len) {
     return mergeSettings(&obj);
 }
 
-String getSettingsAsJson() {
-    String output;
-    serializeJson(settings, output);
-    return output;
+void printSettings(Print &out) {
+    serializeJson(settings, out);
 }
+
+const MetricProxy settingsBytes(
+    "esp_settings_bytes", "gauge",
+    "Amount of bytes used for storing the settings.",
+    [](const char *name, Print *out){
+        out->printf("%s %u\n", name, settings.memoryUsage());
+    }
+);

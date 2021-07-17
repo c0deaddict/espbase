@@ -47,5 +47,5 @@
 #endif // INFLUXDB_URL
 
 #ifndef SETTINGS_MAX_SIZE
-#define SETTINGS_MAX_SIZE 2048
+#define SETTINGS_MAX_SIZE 1024
 #endif
