@@ -3,6 +3,7 @@
 
 #ifdef MQTT_HOST
 
+volatile bool mqttState = true;
 void connectToMqtt();
 
 #ifdef ESP32
@@ -19,7 +20,7 @@ void stopMqttReconnectTimer() {
 Ticker mqttReconnectTimer;
 
 void startMqttReconnectTimer() {
-    mqttReconnectTimer.once(2, connectToMqtt);
+    mqttReconnectTimer.once_ms(2000, connectToMqtt);
 }
 
 void stopMqttReconnectTimer() {
@@ -51,14 +52,16 @@ void connectToMqtt() {
 
 void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
     mqttDisconnected.inc();
-    Serial.println("Disconnected from MQTT.");
+    Serial.printf("Disconnected from MQTT: %s\n\r", mqttDisconnectReasonToStr(reason).c_str());
 
-    if (WiFi.isConnected()) {
+    if (mqttState && WiFi.isConnected()) {
         startMqttReconnectTimer();
     }
 }
 
 void disconnectMqtt() {
+    mqttState = false;
+    stopMqttReconnectTimer();
     mqtt.disconnect();
 }
 
