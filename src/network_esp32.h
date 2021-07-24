@@ -13,7 +13,7 @@ void setHostname(const char *hostname) {
 }
 
 void onWifiEvent(WiFiEvent_t event) {
-    Serial.printf("[WiFi-event] event: %d\n\r", event);
+    logger->printf("[WiFi-event] event: %d\n\r", event);
 
     switch(event) {
     case SYSTEM_EVENT_STA_GOT_IP:

@@ -33,10 +33,14 @@ MetricProxy wifiRssi(
 );
 
 void connectToWifi() {
-    Serial.print("Connecting to WiFi ");
+    logger->print("Connecting to WiFi ");
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    #ifdef ESP8266
+    wifi_set_sleep_type(NONE_SLEEP_T);
+    #endif
     #ifdef ESP32
+    WiFi.setSleep(false);
     // https://github.com/espressif/arduino-esp32/issues/3438
     WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
     #endif
@@ -44,13 +48,13 @@ void connectToWifi() {
 }
 
 void onWifiConnect() {
-    Serial.println("WiFi connected");
-    Serial.println("IP address: ");
-    Serial.println(WiFi.localIP());
+    logger->println("WiFi connected");
+    logger->println("IP address: ");
+    logger->println(WiFi.localIP());
 
-    Serial.print("Signal strength (RSSI): ");
-    Serial.print(WiFi.RSSI());
-    Serial.println(" dBm");
+    logger->print("Signal strength (RSSI): ");
+    logger->print(WiFi.RSSI());
+    logger->println(" dBm");
 
     #ifdef MQTT_HOST
     connectToMqtt();
@@ -59,18 +63,18 @@ void onWifiConnect() {
     #ifdef INFLUXDB_URL
     // Check server connection
     if (influx.validateConnection()) {
-        Serial.print("Connected to InfluxDB: ");
-        Serial.println(influx.getServerUrl());
+        logger->print("Connected to InfluxDB: ");
+        logger->println(influx.getServerUrl());
     } else {
-        Serial.print("InfluxDB connection failed: ");
-        Serial.println(influx.getLastErrorMessage());
+        logger->print("InfluxDB connection failed: ");
+        logger->println(influx.getLastErrorMessage());
     }
     #endif
 }
 
 void onWifiDisconnect() {
     wifiDisconnected.inc();
-    Serial.println("WiFi lost connection");
+    logger->println("WiFi lost connection");
     #ifdef MQTT_HOST
     stopMqttReconnectTimer(); // ensure we don't reconnect to MQTT while reconnecting to Wi-Fi
     #endif
@@ -79,7 +83,7 @@ void onWifiDisconnect() {
 }
 
 void setupNetwork() {
-    Serial.println("Setting up network..");
+    logger->println("Setting up network..");
 
     #ifdef MQTT_HOST
     setupMqtt();

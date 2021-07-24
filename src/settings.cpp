@@ -4,114 +4,119 @@
 #include "config.h"
 #include "settings.h"
 #include "metrics.h"
+#include "logger.h"
 
 #define SETTINGS_VERSION 1
 
-DynamicJsonDocument settings(SETTINGS_MAX_SIZE);
-
+size_t memory_usage = 0;
 Setting *head = NULL;
 
-Setting::Setting(const char *name, SettingSetDefaultFn setDefault, SettingChangeFn change)
-    : name(name), setDefault(setDefault), change(change) {
-    // Set default
-    JsonVariant value = settings.getOrAddMember(name);
-    setDefault(value);
+// TODO: look into https://github.com/xoseperez/eeprom_rotate
+// https://platformio.org/lib/show/5512/EEPROM32_Rotate
+// https://platformio.org/lib/show/5456/EEPROM_Rotate
 
+Setting::Setting(const char *name, SettingGetFn getter, SettingSetFn setter)
+    : name(name), getter(getter), setter(setter) {
     // Insert at front of definitions list.
     next = head;
     head = this;
 }
 
-void loadSettings() {
+void Setting::load() {
     EEPROM.begin(SETTINGS_MAX_SIZE);
-
-    settings["version"] = SETTINGS_VERSION;
 
     DynamicJsonDocument doc(SETTINGS_MAX_SIZE);
     EepromStream eepromStream(0, SETTINGS_MAX_SIZE);
 
     DeserializationError err = deserializeJson(doc, eepromStream);
     if (err) {
-        Serial.print(F("loadSettings: deserializeJson() failed: "));
-        Serial.println(err.c_str());
+        logger->print("loadSettings: deserializeJson() failed: ");
+        logger->println(err.c_str());
     } else if (!doc.is<JsonObject>()) {
-        Serial.println("loadSettings: saved settings is not an object");
+        logger->println("loadSettings: saved settings is not an object");
     } else {
-        if (doc["version"] != SETTINGS_VERSION) {
-            // TODO: migrate settings
+        memory_usage = doc.memoryUsage();
+
+        int version = doc["version"].as<int>();
+        if (version != SETTINGS_VERSION) {
+            logger->printf("Settings version is unexpected: %d\n\r", version);
+            // TODO: migrate settings?
         }
         doc.remove("version");
 
-        Serial.println("loaded settings:");
-        serializeJson(doc, Serial);
-        Serial.println();
+        logger->println("loaded settings:");
+        serializeJson(doc, *logger);
+        logger->println();
 
         JsonObject obj = doc.as<JsonObject>();
-        mergeSettings(&obj);
+        patch(&obj);
     }
 }
 
-void saveSettings() {
-    Serial.println("Saving settings..");
-
-    // https://arduinojson.org/v6/issues/memory-leak/
-    settings.garbageCollect();
+void Setting::save() {
+    logger->println("Saving settings..");
 
     EepromStream eepromStream(0, SETTINGS_MAX_SIZE);
-    serializeJson(settings, eepromStream);
+    printTo(eepromStream);
     eepromStream.flush();
 }
 
-bool setSetting(const char *name, JsonVariant value) {
+bool Setting::set(const char *name, JsonVariant value) {
     for (Setting *s = head; s != NULL; s = s->next) {
         if (!strcmp(name, s->name)) {
-            if (!s->change(value)) {
+            if (!s->setter(value)) {
                 String serializedValue;
                 serializeJson(value, serializedValue);
-                Serial.printf("Invalid value '%s' for setting %s\n\r", serializedValue.c_str(), name);
+                logger->printf("Invalid value '%s' for setting %s\n\r", serializedValue.c_str(), name);
                 return false;
-            } else {
-                // NOTE: must use `s->name` here since `name` points to memory
-                // that could be freed after this call.
-                settings[s->name] = value;
-                return true;
             }
+
+            return true;
         }
     }
 
-    Serial.printf("Trying to set undefined setting %s\n\r", name);
+    logger->printf("Trying to set undefined setting %s\n\r", name);
     return false;
 }
 
-bool mergeSettings(JsonObject *object) {
+bool Setting::patch(JsonObject *object) {
     bool ok = false;
     for (auto kvp : *object) {
-        ok |= setSetting(kvp.key().c_str(), kvp.value());
+        ok |= set(kvp.key().c_str(), kvp.value());
     }
     return ok;
 }
 
-bool mergeSettings(const char *str, size_t len) {
+bool Setting::patch(const char *str, size_t len) {
     DynamicJsonDocument doc(SETTINGS_MAX_SIZE);
     DeserializationError err = deserializeJson(doc, str, len);
     if (err) {
-        Serial.print(F("mergeSettings: deserializeJson() failed: "));
-        Serial.println(err.c_str());
+        logger->print("mergeSettings: deserializeJson() failed: ");
+        logger->println(err.c_str());
         return false;
     }
 
     JsonObject obj = doc.as<JsonObject>();
-    return mergeSettings(&obj);
+    return patch(&obj);
 }
 
-void printSettings(Print &out) {
-    serializeJson(settings, out);
+void Setting::printTo(Print &out) {
+    DynamicJsonDocument doc(SETTINGS_MAX_SIZE);
+
+    for (Setting *s = head; s != NULL; s = s->next) {
+        s->getter(doc, s->name);
+    }
+
+    doc["version"] = SETTINGS_VERSION;
+    memory_usage = doc.memoryUsage();    
+    
+    serializeJson(doc, out);
 }
 
 const MetricProxy settingsBytes(
     "esp_settings_bytes", "gauge",
     "Amount of bytes used for storing the settings.",
     [](const char *name, Print *out){
-        out->printf("%s %u\n", name, settings.memoryUsage());
+        out->printf("%s %u\n", name, memory_usage);
     }
 );

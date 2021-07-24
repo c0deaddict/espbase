@@ -3,25 +3,23 @@
 #include <ArduinoJson.h>
 #include <functional>
 
-typedef std::function<void(JsonVariant& value)> SettingSetDefaultFn;
-typedef std::function<bool(JsonVariant value)> SettingChangeFn;
+typedef std::function<void(JsonDocument &doc, const char *name)> SettingGetFn;
+typedef std::function<bool(JsonVariant value)> SettingSetFn;
 
 class Setting {
 protected:
     const char *name;
-    SettingSetDefaultFn setDefault;
-    SettingChangeFn change;
+    SettingGetFn getter;
+    SettingSetFn setter;
     Setting *next;
 
 public:
-    Setting(const char *name, SettingSetDefaultFn setDefault, SettingChangeFn change);
+    Setting(const char *name, SettingGetFn getter, SettingSetFn setter);
 
-    friend bool setSetting(const char *name, JsonVariant value);
-    friend void loadSettings();
+    static void load();
+    static void save();
+    static void printTo(Print &out);
+    static bool set(const char *name, JsonVariant value);
+    static bool patch(JsonObject *object);
+    static bool patch(const char *str, size_t len);
 };
-
-void saveSettings();
-bool setSetting(const char *name, JsonVariant value);
-void printSettings(Print &out);
-bool mergeSettings(JsonObject *object);
-bool mergeSettings(const char *str, size_t len);

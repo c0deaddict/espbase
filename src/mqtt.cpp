@@ -46,13 +46,13 @@ String mqttDisconnectReasonToStr(AsyncMqttClientDisconnectReason reason) {
 }
 
 void connectToMqtt() {
-    Serial.println("Connecting to MQTT...");
+    logger->println("Connecting to MQTT...");
     mqtt.connect();
 }
 
 void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
     mqttDisconnected.inc();
-    Serial.printf("Disconnected from MQTT: %s\n\r", mqttDisconnectReasonToStr(reason).c_str());
+    logger->printf("Disconnected from MQTT: %s\n\r", mqttDisconnectReasonToStr(reason).c_str());
 
     if (mqttState && WiFi.isConnected()) {
         startMqttReconnectTimer();

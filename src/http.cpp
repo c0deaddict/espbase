@@ -14,43 +14,59 @@ void handleGetMetrics(AsyncWebServerRequest *request) {
     request->send(response);
 }
 
+bool parseSaveSettingsHeader(AsyncWebServerRequest *request) {
+    bool save = false;
+
+    if (request->hasHeader("X-Save-Settings")) {
+        const char *value = request->getHeader("X-Save-Settings")->value().c_str();
+        save = !strcmp(value, "1");
+    }
+
+    return save;
+}
+
 void handlePostControl(AsyncWebServerRequest *request) {
     int numParams = request->params();
     for (int i = 0; i < numParams; i++) {
         AsyncWebParameter *p = request->getParam(i);
         if (!p->isFile()) { // accept GET or POST parameters
-            DynamicJsonDocument doc(256);
+            StaticJsonDocument<256> doc;
             DeserializationError err = deserializeJson(doc, p->value());
             if (err) {
-                Serial.print(F("handlePostControl: deserializeJson() failed: "));
-                Serial.println(err.c_str());
+                logger->print(F("handlePostControl: deserializeJson() failed: "));
+                logger->println(err.c_str());
             }
-            else if (setSetting(p->name().c_str(), doc.as<JsonVariant>())) {
-                saveSettings();
+            else if (Setting::set(p->name().c_str(), doc.as<JsonVariant>())) {
+                if (parseSaveSettingsHeader(request)) {
+                    Setting::save();
+                }
             }
         }
     }
 
-    AsyncResponseStream *response = request->beginResponseStream("application/json");
-    printSettings(*response);
-    request->send(response);
+    request->send(200, "text/plain", "Ok");
 }
 
 void handleGetSettings(AsyncWebServerRequest *request) {
     AsyncResponseStream *response = request->beginResponseStream("application/json");
-    printSettings(*response);
+    Setting::printTo(*response);
     request->send(response);
 }
 
 void handlePostSettings(AsyncWebServerRequest *request, JsonVariant &json) {
     JsonObject obj = json.as<JsonObject>();
-    if (mergeSettings(&obj)) {
-        saveSettings();
+    if (Setting::patch(&obj) && parseSaveSettingsHeader(request)) {
+        Setting::save();
     }
 
     AsyncResponseStream *response = request->beginResponseStream("application/json");
-    printSettings(*response);
+    Setting::printTo(*response);
     request->send(response);
+}
+
+void handleSaveSettings(AsyncWebServerRequest *request) {
+    request->send(200, "text/plain", "Ok");
+    Setting::save();
 }
 
 void handleRestart(AsyncWebServerRequest *request) {
@@ -67,6 +83,7 @@ void setupHttp() {
     http.on("/metrics", HTTP_GET, handleGetMetrics);
     http.on("/control", HTTP_POST, handlePostControl);
     http.on("/settings", HTTP_GET, handleGetSettings);
+    http.on("/save", HTTP_POST, handleSaveSettings);
     http.on("/restart", HTTP_POST, handleRestart);
 
     AsyncCallbackJsonWebHandler* postSettings =

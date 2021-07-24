@@ -5,13 +5,12 @@ void setupOta();
 void setupHttp();
 void handleNetwork();
 void handleOta();
-void loadSettings();
 
 void setupEspbase() {
     setupNetwork();
     setupOta();
     setupHttp();
-    loadSettings();
+    Setting::load();
 }
 
 void handleEspbase() {

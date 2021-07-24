@@ -100,13 +100,13 @@ void loop() {
 }
 
 void mqttOnMessage(char* topic, char* payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total) {
-    Serial.printf("Received mqtt message on %s: %.*s\n\r", topic, len, payload);
+    logger->printf("Received mqtt message on %s: %.*s\n\r", topic, len, payload);
 }
 
 // Must be called before setupEspbase()
 void prepareMqtt() {
     mqtt.onConnect([](bool sessionPresent) {
-        Serial.println("Connected to MQTT!");
+        logger->println("Connected to MQTT!");
         mqtt.subscribe("sensors/+/pir", 0);
     });
     mqtt.onMessage(mqttOnMessage);
