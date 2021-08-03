@@ -8,6 +8,8 @@ typedef std::function<bool(JsonVariant value)> SettingSetFn;
 
 class Setting {
 protected:
+    static Setting *head;
+
     const char *name;
     SettingGetFn getter;
     SettingSetFn setter;

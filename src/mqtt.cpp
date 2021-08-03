@@ -1,35 +1,12 @@
 #include "config.h"
 #include "espbase.h"
+#include <stdarg.h>
 
 #ifdef MQTT_HOST
+Mqtt mqtt;
 
-volatile bool mqttState = true;
-void connectToMqtt();
-
-#ifdef ESP32
-TimerHandle_t mqttReconnectTimer;
-
-void startMqttReconnectTimer() {
-    xTimerStart(mqttReconnectTimer, 0);
-}
-
-void stopMqttReconnectTimer() {
-    xTimerStop(mqttReconnectTimer, 0);
-}
-#else
-Ticker mqttReconnectTimer;
-
-void startMqttReconnectTimer() {
-    mqttReconnectTimer.once_ms(2000, connectToMqtt);
-}
-
-void stopMqttReconnectTimer() {
-    mqttReconnectTimer.detach();
-}
-#endif // ESP32
-
-AsyncMqttClient mqtt;
 Counter mqttDisconnected("esp_mqtt_disconnected", "Number of times MQTT is disconnected.");
+Counter mqttMessagesReceived("esp_mqtt_messages_received", "Number of messages received over MQTT.");
 
 String mqttDisconnectReasonToStr(AsyncMqttClientDisconnectReason reason) {
     switch (reason) {
@@ -45,34 +22,121 @@ String mqttDisconnectReasonToStr(AsyncMqttClientDisconnectReason reason) {
     }
 }
 
-void connectToMqtt() {
-    logger->println("Connecting to MQTT...");
-    mqtt.connect();
+#ifdef ESP32
+void Mqtt::startReconnectTimer() {
+    xTimerStart(reconnectTimer, 0);
 }
 
-void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
-    mqttDisconnected.inc();
-    logger->printf("Disconnected from MQTT: %s\n\r", mqttDisconnectReasonToStr(reason).c_str());
+void Mqtt::stopReconnectTimer() {
+    xTimerStop(reconnectTimer, 0);
+}
+#else
+void Mqtt::startReconnectTimer() {
+    reconnectTimer.once_ms(2000, [this]() {
+        connect();
+    });
+}
 
-    if (mqttState && WiFi.isConnected()) {
-        startMqttReconnectTimer();
+void Mqtt::stopReconnectTimer() {
+    reconnectTimer.detach();
+}
+#endif // ESP32
+
+MqttSub *MqttSub::head = NULL;
+
+MqttSub::MqttSub(const char *pattern, MqttHandler handler) : pattern(pattern), handler(handler) {
+    // Insert at front of definitions list.
+    next = head;
+    head = this;
+}
+
+bool MqttSub::match(const char *topic) {
+    // / = topic separator
+    // # = multi level wildcard
+    // + = single level wildcard
+    const char *p = pattern;
+    for (; *p != 0 && *topic != 0; p++, topic++) {
+        if (*p == '#') {
+            return true;
+        } else if (*p == '+') {
+            const char *sep = strchr(topic, '/');
+            if (sep == NULL) {
+                // Pattern matches until the end.
+                return true;
+            } else {
+                // Step back one, because loop will increment topic.
+                topic = sep - 1;
+            }
+        } else if (*p != *topic) {
+            return false;
+        }
     }
+
+    return *p == 0 && *topic == 0;
 }
 
-void disconnectMqtt() {
-    mqttState = false;
-    stopMqttReconnectTimer();
-    mqtt.disconnect();
+void MqttSub::subscribe(AsyncMqttClient *client) {
+    logger->printf("MQTT: subscribed to %s\n\r", pattern);
+    client->subscribe(pattern, 0);
 }
 
-void setupMqtt() {
+void Mqtt::connect() {
+    logger->println("MQTT: connecting...");
+    client.connect();
+}
+
+void Mqtt::disconnect() {
+    state = false;
+    stopReconnectTimer();
+    client.disconnect();
+}
+
+void Mqtt::setup() {
     #ifdef ESP32
-    mqttReconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connectToMqtt));
+    mqttReconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)0, reinterpret_cast<TimerCallbackFunction_t>(connect));
     #endif
 
-    mqtt.onDisconnect(onMqttDisconnect);
-    mqtt.setCredentials(MQTT_USER, MQTT_PASSWORD);
-    mqtt.setServer(MQTT_HOST, MQTT_PORT);
+    client.setCredentials(MQTT_USER, MQTT_PASSWORD);
+    client.setServer(MQTT_HOST, MQTT_PORT);
+
+    client.onConnect([this](bool sessionPresent) {
+        logger->println("MQTT: connected");
+        for (MqttSub *sub = MqttSub::head; sub != NULL; sub = sub->next) {
+            sub->subscribe(&client);
+        }
+    });
+
+    client.onDisconnect([this](AsyncMqttClientDisconnectReason reason) {
+        mqttDisconnected.inc();
+        logger->printf("MQTT: disconnected: %s\n\r", mqttDisconnectReasonToStr(reason).c_str());
+
+        if (state && WiFi.isConnected()) {
+            startReconnectTimer();
+        }
+    });    
+
+    client.onMessage([this](const char *topic, const char *payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total) {
+        logger->printf("MQTT: received message on topic %s\n\r", topic);
+        mqttMessagesReceived.inc();
+        for (MqttSub *sub = MqttSub::head; sub != NULL; sub = sub->next) {
+            if (sub->match(topic)) {
+                logger->printf("MQTT: topic %s matched %s\n\r", topic, sub->pattern);
+                if (len != total) {
+                    logger->printf("MQTT: received too large payload: %u != %u (ignoring message)\n\r", len, total);
+                } else {
+                    sub->handler(topic, payload, len);
+                }
+                return;
+            }
+        }
+
+        // Should never happen!
+        logger->printf("MQTT: no handler matched topic %s\n\r", topic);
+    });
+}
+
+void Mqtt::publish(const char *topic, uint8_t qos, bool retain, const char *payload, size_t len) {
+    client.publish(topic, qos, retain, payload, len);
 }
 
 #endif // MQTT_HOST

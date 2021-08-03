@@ -33,7 +33,7 @@ MetricProxy wifiRssi(
 );
 
 void connectToWifi() {
-    logger->print("Connecting to WiFi ");
+    logger->println("WiFi: connecting...");
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     #ifdef ESP8266
@@ -48,45 +48,37 @@ void connectToWifi() {
 }
 
 void onWifiConnect() {
-    logger->println("WiFi connected");
-    logger->println("IP address: ");
-    logger->println(WiFi.localIP());
-
-    logger->print("Signal strength (RSSI): ");
-    logger->print(WiFi.RSSI());
-    logger->println(" dBm");
+    logger->println("WiFi: connected");
+    logger->printf("WiFi: IP address: %s\n\r", WiFi.localIP().toString().c_str());
+    logger->printf("WiFi: signal strength (RSSI): %d\n\r", WiFi.RSSI());
 
     #ifdef MQTT_HOST
-    connectToMqtt();
+    mqtt.connect();
     #endif
 
     #ifdef INFLUXDB_URL
     // Check server connection
     if (influx.validateConnection()) {
-        logger->print("Connected to InfluxDB: ");
-        logger->println(influx.getServerUrl());
+        logger->printf("InfluxDB: connected to InfluxDB: %s\n\r", influx.getServerUrl());
     } else {
-        logger->print("InfluxDB connection failed: ");
-        logger->println(influx.getLastErrorMessage());
+        logger->print("InfluxDB: connection failed: %s\n\r", influx.getLastErrorMessage());
     }
     #endif
 }
 
 void onWifiDisconnect() {
     wifiDisconnected.inc();
-    logger->println("WiFi lost connection");
+    logger->println("WiFi: lost connection");
     #ifdef MQTT_HOST
-    stopMqttReconnectTimer(); // ensure we don't reconnect to MQTT while reconnecting to Wi-Fi
+    mqtt.stopReconnectTimer(); // ensure we don't reconnect to MQTT while reconnecting to Wi-Fi
     #endif
 
     startWifiReconnectTimer();
 }
 
 void setupNetwork() {
-    logger->println("Setting up network..");
-
     #ifdef MQTT_HOST
-    setupMqtt();
+    mqtt.setup();
     #endif
 
     setupWifi();

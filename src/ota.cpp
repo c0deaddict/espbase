@@ -2,10 +2,7 @@
 
 #include "config.h"
 #include "logger.h"
-
-#ifdef MQTT_HOST
-#include "mqtt.h"
-#endif
+#include "network.h"
 
 extern void stop();
 
@@ -19,7 +16,7 @@ void setupOta() {
         stop();
 
         #ifdef MQTT_HOST
-        disconnectMqtt();
+        mqtt.disconnect();
         #endif
 
         String type;
@@ -29,16 +26,16 @@ void setupOta() {
             type = "filesystem";
 
         // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-        logger->println("Start updating " + type);
+        logger->println("OTA: start updating " + type);
     });
     ArduinoOTA.onEnd([]() {
-        logger->println("\nEnd");
+        logger->println("\nOTA: end");
     });
     ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-        logger->printf("Progress: %u%%\r", (progress / (total / 100)));
+        logger->printf("OTA: progress: %u%%\r", (progress / (total / 100)));
     });
     ArduinoOTA.onError([](ota_error_t error) {
-        logger->printf("Error[%u]: ", error);
+        logger->printf("OTA: error[%u]: ", error);
         if (error == OTA_AUTH_ERROR) logger->println("Auth Failed");
         else if (error == OTA_BEGIN_ERROR) logger->println("Begin Failed");
         else if (error == OTA_CONNECT_ERROR) logger->println("Connect Failed");
@@ -46,7 +43,7 @@ void setupOta() {
         else if (error == OTA_END_ERROR) logger->println("End Failed");
     });
     ArduinoOTA.begin();
-    logger->println("OTA configured");
+    logger->println("OTA: configured");
 }
 
 void handleOta() {

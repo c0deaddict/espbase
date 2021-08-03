@@ -27,6 +27,7 @@ bool parseSaveSettingsHeader(AsyncWebServerRequest *request) {
 
 void handlePostControl(AsyncWebServerRequest *request) {
     int numParams = request->params();
+    bool changed = false;
     for (int i = 0; i < numParams; i++) {
         AsyncWebParameter *p = request->getParam(i);
         if (!p->isFile()) { // accept GET or POST parameters
@@ -37,11 +38,13 @@ void handlePostControl(AsyncWebServerRequest *request) {
                 logger->println(err.c_str());
             }
             else if (Setting::set(p->name().c_str(), doc.as<JsonVariant>())) {
-                if (parseSaveSettingsHeader(request)) {
-                    Setting::save();
-                }
+                changed = true;
             }
         }
+    }
+
+    if (changed && parseSaveSettingsHeader(request)) {
+        Setting::save();
     }
 
     request->send(200, "text/plain", "Ok");
@@ -79,6 +82,7 @@ void handleRestart(AsyncWebServerRequest *request) {
     #endif
 }
 
+// TODO: count number of requests + bytes sent/received
 void setupHttp() {
     http.on("/metrics", HTTP_GET, handleGetMetrics);
     http.on("/control", HTTP_POST, handlePostControl);

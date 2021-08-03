@@ -9,7 +9,7 @@
 #define SETTINGS_VERSION 1
 
 size_t memory_usage = 0;
-Setting *head = NULL;
+Setting *Setting::head = NULL;
 
 // TODO: look into https://github.com/xoseperez/eeprom_rotate
 // https://platformio.org/lib/show/5512/EEPROM32_Rotate
@@ -30,21 +30,21 @@ void Setting::load() {
 
     DeserializationError err = deserializeJson(doc, eepromStream);
     if (err) {
-        logger->print("loadSettings: deserializeJson() failed: ");
+        logger->print("Settings: load: deserializeJson() failed: ");
         logger->println(err.c_str());
     } else if (!doc.is<JsonObject>()) {
-        logger->println("loadSettings: saved settings is not an object");
+        logger->println("Settings: saved settings is not an object");
     } else {
         memory_usage = doc.memoryUsage();
 
         int version = doc["version"].as<int>();
         if (version != SETTINGS_VERSION) {
-            logger->printf("Settings version is unexpected: %d\n\r", version);
+            logger->printf("Settings: version is unexpected: %d\n\r", version);
             // TODO: migrate settings?
         }
         doc.remove("version");
 
-        logger->println("loaded settings:");
+        logger->print("Settings: loaded: ");
         serializeJson(doc, *logger);
         logger->println();
 
@@ -54,20 +54,19 @@ void Setting::load() {
 }
 
 void Setting::save() {
-    logger->println("Saving settings..");
-
     EepromStream eepromStream(0, SETTINGS_MAX_SIZE);
     printTo(eepromStream);
     eepromStream.flush();
+    logger->println("Settings: saved");
 }
 
 bool Setting::set(const char *name, JsonVariant value) {
-    for (Setting *s = head; s != NULL; s = s->next) {
+    for (Setting *s = Setting::head; s != NULL; s = s->next) {
         if (!strcmp(name, s->name)) {
             if (!s->setter(value)) {
                 String serializedValue;
                 serializeJson(value, serializedValue);
-                logger->printf("Invalid value '%s' for setting %s\n\r", serializedValue.c_str(), name);
+                logger->printf("Settings: invalid value '%s' for %s\n\r", serializedValue.c_str(), name);
                 return false;
             }
 
@@ -75,7 +74,7 @@ bool Setting::set(const char *name, JsonVariant value) {
         }
     }
 
-    logger->printf("Trying to set undefined setting %s\n\r", name);
+    logger->printf("Settings: trying to set undefined setting %s\n\r", name);
     return false;
 }
 
@@ -91,7 +90,7 @@ bool Setting::patch(const char *str, size_t len) {
     DynamicJsonDocument doc(SETTINGS_MAX_SIZE);
     DeserializationError err = deserializeJson(doc, str, len);
     if (err) {
-        logger->print("mergeSettings: deserializeJson() failed: ");
+        logger->print("Settings: patch: deserializeJson() failed: ");
         logger->println(err.c_str());
         return false;
     }
@@ -103,7 +102,7 @@ bool Setting::patch(const char *str, size_t len) {
 void Setting::printTo(Print &out) {
     DynamicJsonDocument doc(SETTINGS_MAX_SIZE);
 
-    for (Setting *s = head; s != NULL; s = s->next) {
+    for (Setting *s = Setting::head; s != NULL; s = s->next) {
         s->getter(doc, s->name);
     }
 

@@ -19,7 +19,7 @@ extern "C" {
 #include <AsyncMqttClient.h>
 
 #ifdef MQTT_HOST
-extern AsyncMqttClient mqtt;
+#include "mqtt.h"
 #endif
 
 #ifdef USE_NTP
