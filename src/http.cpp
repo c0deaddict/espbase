@@ -82,13 +82,19 @@ void handleRestart(AsyncWebServerRequest *request) {
     #endif
 }
 
-// TODO: count number of requests + bytes sent/received
+void handleDescribe(AsyncWebServerRequest *request) {
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    DeviceDesc::printTo(*response);
+    request->send(response);
+}
+
 void setupHttp() {
     http.on("/metrics", HTTP_GET, handleGetMetrics);
     http.on("/control", HTTP_POST, handlePostControl);
     http.on("/settings", HTTP_GET, handleGetSettings);
     http.on("/save", HTTP_POST, handleSaveSettings);
     http.on("/restart", HTTP_POST, handleRestart);
+    http.on("/describe", HTTP_GET, handleDescribe);
 
     AsyncCallbackJsonWebHandler* postSettings =
         new AsyncCallbackJsonWebHandler("/settings", handlePostSettings);

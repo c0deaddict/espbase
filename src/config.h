@@ -49,3 +49,11 @@
 #ifndef SETTINGS_MAX_SIZE
 #define SETTINGS_MAX_SIZE 1024
 #endif
+
+#ifndef DEVICE_DESC_MAX_SIZE
+#define DEVICE_DESC_MAX_SIZE 1536
+#endif
+
+#ifndef GROUPS
+#define GROUPS {"all"}
+#endif

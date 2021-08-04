@@ -1,6 +1,7 @@
 #include "config.h"
 #include "espbase.h"
-#include <stdarg.h>
+
+using namespace std::placeholders;
 
 #ifdef MQTT_HOST
 Mqtt mqtt;
@@ -32,9 +33,7 @@ void Mqtt::stopReconnectTimer() {
 }
 #else
 void Mqtt::startReconnectTimer() {
-    reconnectTimer.once_ms(2000, [this]() {
-        connect();
-    });
+    reconnectTimer.once_ms(2000, std::bind(&Mqtt::connect, this));
 }
 
 void Mqtt::stopReconnectTimer() {
@@ -44,7 +43,8 @@ void Mqtt::stopReconnectTimer() {
 
 MqttSub *MqttSub::head = NULL;
 
-MqttSub::MqttSub(const char *pattern, MqttHandler handler) : pattern(pattern), handler(handler) {
+MqttSub::MqttSub(const char *pattern, bool targeted, MqttHandler handler)
+    : pattern(pattern), targeted(targeted), handler(handler) {
     // Insert at front of definitions list.
     next = head;
     head = this;
@@ -75,20 +75,83 @@ bool MqttSub::match(const char *topic) {
     return *p == 0 && *topic == 0;
 }
 
+bool MqttSub::isTarget(const char *topic) {
+    if (!targeted) {
+        return true;
+    }
+
+    const char *target = strrchr(topic, '/');
+    if (target == NULL) return false;
+    target++; // Skip the slash
+
+    if (!strcmp(target, HOSTNAME)) {
+        return true;
+    }
+
+    for (const char *group : DeviceDesc::groups) {
+        if (!strcmp(target, group)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void MqttSub::subscribe(AsyncMqttClient *client) {
     logger->printf("MQTT: subscribed to %s\n\r", pattern);
     client->subscribe(pattern, 0);
 }
 
+Mqtt::Mqtt() : state(true) {
+}
+
 void Mqtt::connect() {
+    state = true;
     logger->println("MQTT: connecting...");
     client.connect();
 }
 
 void Mqtt::disconnect() {
-    state = false;
     stopReconnectTimer();
+    state = false;
     client.disconnect();
+}
+
+void Mqtt::onConnect(bool sessionPresent) {
+    logger->println("MQTT: connected");
+    for (MqttSub *sub = MqttSub::head; sub != NULL; sub = sub->next) {
+        sub->subscribe(&client);
+    }
+}
+
+void Mqtt::onDisconnect(AsyncMqttClientDisconnectReason reason) {
+    mqttDisconnected.inc();
+    logger->printf("MQTT: disconnected: %s\n\r", mqttDisconnectReasonToStr(reason).c_str());
+
+    if (state && WiFi.isConnected()) {
+        startReconnectTimer();
+    }
+}
+
+void Mqtt::onMessage(const char *topic, const char *payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total) {
+    logger->printf("MQTT: received message on topic %s\n\r", topic);
+    mqttMessagesReceived.inc();
+    for (MqttSub *sub = MqttSub::head; sub != NULL; sub = sub->next) {
+        if (sub->match(topic)) {
+            // logger->printf("MQTT: topic %s matched %s\n\r", topic, sub->pattern);
+            if (len != total) {
+                logger->printf("MQTT: received too large payload: %u != %u (ignoring message)\n\r", len, total);
+            } else if (sub->isTarget(topic)) {
+                sub->handler(topic, payload, len);
+            } else {
+                // logger->printf("MQTT: topic %s does not match target\n\r", topic);
+            }
+            return;
+        }
+    }
+
+    // Should never happen!
+    logger->printf("MQTT: no handler matched topic %s\n\r", topic);
 }
 
 void Mqtt::setup() {
@@ -99,44 +162,34 @@ void Mqtt::setup() {
     client.setCredentials(MQTT_USER, MQTT_PASSWORD);
     client.setServer(MQTT_HOST, MQTT_PORT);
 
-    client.onConnect([this](bool sessionPresent) {
-        logger->println("MQTT: connected");
-        for (MqttSub *sub = MqttSub::head; sub != NULL; sub = sub->next) {
-            sub->subscribe(&client);
-        }
-    });
-
-    client.onDisconnect([this](AsyncMqttClientDisconnectReason reason) {
-        mqttDisconnected.inc();
-        logger->printf("MQTT: disconnected: %s\n\r", mqttDisconnectReasonToStr(reason).c_str());
-
-        if (state && WiFi.isConnected()) {
-            startReconnectTimer();
-        }
-    });    
-
-    client.onMessage([this](const char *topic, const char *payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total) {
-        logger->printf("MQTT: received message on topic %s\n\r", topic);
-        mqttMessagesReceived.inc();
-        for (MqttSub *sub = MqttSub::head; sub != NULL; sub = sub->next) {
-            if (sub->match(topic)) {
-                logger->printf("MQTT: topic %s matched %s\n\r", topic, sub->pattern);
-                if (len != total) {
-                    logger->printf("MQTT: received too large payload: %u != %u (ignoring message)\n\r", len, total);
-                } else {
-                    sub->handler(topic, payload, len);
-                }
-                return;
-            }
-        }
-
-        // Should never happen!
-        logger->printf("MQTT: no handler matched topic %s\n\r", topic);
-    });
+    client.onConnect(std::bind(&Mqtt::onConnect, this, _1));
+    client.onDisconnect(std::bind(&Mqtt::onDisconnect, this, _1));
+    client.onMessage(std::bind(&Mqtt::onMessage, this, _1, _2, _3, _4, _5, _6));
 }
 
 void Mqtt::publish(const char *topic, uint8_t qos, bool retain, const char *payload, size_t len) {
     client.publish(topic, qos, retain, payload, len);
 }
+
+MqttSub mqttDiscover(
+    "esp/discovery/request", false,
+    [](const char *topic, const char *payload, size_t len) {
+        String buf;
+        size_t buflen = DeviceDesc::printTo(buf);
+        mqtt.publish("esp/discovery/response", 0, false, buf.c_str(), buflen);
+    }
+);
+
+MqttSub mqttPatchSettings(
+    "esp/settings/patch/+", true,
+    [](const char *topic, const char *payload, size_t len) {
+        Setting::patch(payload, len);
+    }
+);
+
+MqttSub mqttSaveSettings(
+    "esp/settings/save/+", true,
+    std::bind(&Setting::save)
+);
 
 #endif // MQTT_HOST

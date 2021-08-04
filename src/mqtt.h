@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ArduinoJson.h>
 #include <AsyncMqttClient.h>
 
 typedef std::function<void(const char *topic, const char *payload, size_t len)> MqttHandler;
@@ -11,13 +12,15 @@ private:
     static MqttSub *head;
     MqttSub *next;
     const char *pattern;
+    bool targeted;
     MqttHandler handler;
 
     void subscribe(AsyncMqttClient *client);
 
 public:
-    MqttSub(const char *pattern, MqttHandler handler);
+    MqttSub(const char *pattern, bool targeted, MqttHandler handler);
     bool match(const char *topic);
+    bool isTarget(const char *topic);
 };
 
 class Mqtt {
@@ -38,6 +41,7 @@ private:
     void onMessage(const char *topic, const char *payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total);
 
 public:
+    Mqtt();
     void setup();
     void connect();
     void disconnect();

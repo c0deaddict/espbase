@@ -3,7 +3,7 @@
 #include <ArduinoJson.h>
 #include <functional>
 
-typedef std::function<void(JsonDocument &doc, const char *name)> SettingGetFn;
+typedef std::function<void(JsonObject &obj, const char *name)> SettingGetFn;
 typedef std::function<bool(JsonVariant value)> SettingSetFn;
 
 class Setting {
@@ -20,6 +20,7 @@ public:
 
     static void load();
     static void save();
+    static void toJson(JsonObject &obj);
     static void printTo(Print &out);
     static bool set(const char *name, JsonVariant value);
     static bool patch(JsonObject *object);

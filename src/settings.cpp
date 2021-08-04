@@ -99,16 +99,19 @@ bool Setting::patch(const char *str, size_t len) {
     return patch(&obj);
 }
 
-void Setting::printTo(Print &out) {
-    DynamicJsonDocument doc(SETTINGS_MAX_SIZE);
-
+void Setting::toJson(JsonObject &obj) {
     for (Setting *s = Setting::head; s != NULL; s = s->next) {
-        s->getter(doc, s->name);
+        s->getter(obj, s->name);
     }
 
-    doc["version"] = SETTINGS_VERSION;
-    memory_usage = doc.memoryUsage();    
-    
+    obj["version"] = SETTINGS_VERSION;
+}
+
+void Setting::printTo(Print &out) {
+    DynamicJsonDocument doc(SETTINGS_MAX_SIZE);
+    JsonObject obj = doc.to<JsonObject>();
+    toJson(obj);
+    memory_usage = doc.memoryUsage();
     serializeJson(doc, out);
 }
 

@@ -19,3 +19,5 @@
 
 // Optional NTP.
 #define USE_NTP
+
+#define GROUPS {"living-room"}
