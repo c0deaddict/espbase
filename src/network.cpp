@@ -59,9 +59,9 @@ void onWifiConnect() {
     #ifdef INFLUXDB_URL
     // Check server connection
     if (influx.validateConnection()) {
-        logger->printf("InfluxDB: connected to InfluxDB: %s\n\r", influx.getServerUrl());
+        logger->printf("InfluxDB: connected to InfluxDB: %s\n\r", influx.getServerUrl().c_str());
     } else {
-        logger->print("InfluxDB: connection failed: %s\n\r", influx.getLastErrorMessage());
+        logger->printf("InfluxDB: connection failed: %s\n\r", influx.getLastErrorMessage().c_str());
     }
     #endif
 }
