@@ -156,8 +156,9 @@ void Mqtt::onMessage(const char *topic, const char *payload, AsyncMqttClientMess
 
 void Mqtt::setup() {
     #ifdef ESP32
-    reconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)this, [](void *mqtt) {
-        ((Mqtt *)mqtt)->connect();
+    reconnectTimer = xTimerCreate("mqttTimer", pdMS_TO_TICKS(2000), pdFALSE, (void*)this, [](TimerHandle_t timer) {
+        Mqtt *mqtt = (Mqtt *)pvTimerGetTimerID(timer);
+        mqtt->connect();
     });
     #endif
 
