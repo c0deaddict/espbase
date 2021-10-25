@@ -34,6 +34,7 @@ MetricProxy wifiRssi(
 
 void connectToWifi() {
     logger->println("WiFi: connecting...");
+    WiFi.disconnect(true);
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     #ifdef ESP8266
