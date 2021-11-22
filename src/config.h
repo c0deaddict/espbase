@@ -51,7 +51,11 @@
 #endif
 
 #ifndef DEVICE_DESC_MAX_SIZE
-#define DEVICE_DESC_MAX_SIZE 1536
+#define DEVICE_DESC_MAX_SIZE 1024
+#endif
+
+#ifndef DEVICE_CONFIG_MAX_SIZE
+#define DEVICE_CONFIG_MAX_SIZE 1024
 #endif
 
 #ifndef GROUPS

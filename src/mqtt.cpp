@@ -122,6 +122,8 @@ void Mqtt::onConnect(bool sessionPresent) {
     for (MqttSub *sub = MqttSub::head; sub != NULL; sub = sub->next) {
         sub->subscribe(&client);
     }
+
+    Device::announceAll();
 }
 
 void Mqtt::onDisconnect(AsyncMqttClientDisconnectReason reason) {
