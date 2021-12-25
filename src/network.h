@@ -27,9 +27,4 @@ extern "C" {
 extern NTPClient ntp;
 #endif
 
-#ifdef INFLUXDB_URL
-#include <InfluxDbClient.h>
-extern InfluxDBClient influx;
-#endif
-
 extern AsyncWebServer http;

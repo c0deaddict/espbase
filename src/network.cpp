@@ -17,10 +17,6 @@ WiFiUDP ntpUDP;
 NTPClient ntp(NTPClient(ntpUDP, "europe.pool.ntp.org", utcOffsetSeconds));
 #endif
 
-#ifdef INFLUXDB_URL
-InfluxDBClient influx(INFLUXDB_URL, INFLUXDB_DB);
-#endif
-
 Counter wifiDisconnected("esp_wifi_disconnected", "Number of times WiFi is diconnected.");
 
 MetricProxy wifiRssi(
@@ -55,15 +51,6 @@ void onWifiConnect() {
 
     #ifdef MQTT_HOST
     mqtt.connect();
-    #endif
-
-    #ifdef INFLUXDB_URL
-    // Check server connection
-    if (influx.validateConnection()) {
-        logger->printf("InfluxDB: connected to InfluxDB: %s\n\r", influx.getServerUrl().c_str());
-    } else {
-        logger->printf("InfluxDB: connection failed: %s\n\r", influx.getLastErrorMessage().c_str());
-    }
     #endif
 }
 

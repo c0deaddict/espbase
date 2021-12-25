@@ -33,19 +33,14 @@
             "version": "^1.6.1"
         },
         {
-            "owner": "ottowinter",
-            "name": "AsyncMqttClient-esphome",
-            "version": "^0.8.6"
+            "owner": "marvinroger",
+            "name": "AsyncMqttClient",
+            "version": "^0.9.0"
         },
         {
             "owner": "ottowinter",
             "name": "ESPAsyncWebServer-esphome",
             "version": "^2.0.1"
-        },
-        {
-            "owner": "tobiasschuerg",
-            "name": "ESP8266 Influxdb",
-            "version": "^3.8.0"
         }
     ]
 }

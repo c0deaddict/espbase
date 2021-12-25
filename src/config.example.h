@@ -13,10 +13,6 @@
 #define MQTT_USER "espbase"
 #define MQTT_PASSWORD "password123"
 
-// Optional InfluxDB.
-#define INFLUXDB_URL "http://127.0.0.1:8086"
-#define INFLUXDB_DB "metrics"
-
 // Optional NTP.
 #define USE_NTP
 

@@ -37,15 +37,6 @@
 
 #endif // MQTT_HOST
 
-// InfluxDB is optional.
-#ifdef INFLUXDB_URL
-
-#ifndef INFLUXDB_DB
-#error "INFLUXDB_DB is not configured"
-#endif
-
-#endif // INFLUXDB_URL
-
 #ifndef SETTINGS_MAX_SIZE
 #define SETTINGS_MAX_SIZE 1024
 #endif
