@@ -46,7 +46,7 @@ public:
     void connect();
     void disconnect();
     void stopReconnectTimer();
-    void publish(const char *topic, uint8_t qos, bool retain, const char *payload, size_t len = 0);
+    bool publish(const char *topic, uint8_t qos, bool retain, const char *payload, size_t len = 0, int retries = 0);
 };
 
 extern Mqtt mqtt;

@@ -172,8 +172,25 @@ void Mqtt::setup() {
     client.onMessage(std::bind(&Mqtt::onMessage, this, _1, _2, _3, _4, _5, _6));
 }
 
-void Mqtt::publish(const char *topic, uint8_t qos, bool retain, const char *payload, size_t len) {
-    client.publish(topic, qos, retain, payload, len);
+bool Mqtt::publish(const char *topic, uint8_t qos, bool retain, const char *payload, size_t len, int retries) {
+    if (!client.connected()) {
+        return false;
+    }
+
+    int sleep = 10;
+
+    do {
+        int result = client.publish(topic, qos, retain, payload, len);
+        if (result != 0) {
+            return true;
+        }
+
+        delay(sleep);
+        sleep *= 2;
+    } while (retries-- > 0);
+
+    logger->printf("MQTT publish to %s failed after 3 retries\r\n", topic);
+    return false;
 }
 
 MqttSub mqttDiscover(
