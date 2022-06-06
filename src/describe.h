@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <ArduinoJson.h>
 
 typedef std::function<void(JsonObject &obj)> DeviceDescFn;
