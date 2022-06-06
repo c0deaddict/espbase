@@ -31,6 +31,7 @@ MetricProxy wifiRssi(
 void connectToWifi() {
     logger->println("WiFi: connecting...");
     WiFi.disconnect(true);
+    setHostname(HOSTNAME);
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     #ifdef ESP8266
@@ -38,10 +39,7 @@ void connectToWifi() {
     #endif
     #ifdef ESP32
     WiFi.setSleep(false);
-    // https://github.com/espressif/arduino-esp32/issues/3438
-    WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
     #endif
-    setHostname(HOSTNAME);
 }
 
 void onWifiConnect() {
