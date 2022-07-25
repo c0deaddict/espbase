@@ -7,6 +7,10 @@ using namespace std::placeholders;
 Mqtt mqtt;
 
 Counter mqttDisconnected("esp_mqtt_disconnected", "Number of times MQTT is disconnected.");
+Counter mqttConnected("esp_mqtt_connected", "Number of times MQTT is connected.");
+Counter mqttMessagesSent("esp_mqtt_messages_sent", "Number of messages sent to MQTT.");
+Counter mqttMessagesSentRetries("esp_mqtt_messages_sent_retries", "Number of messages sent to MQTT that are retried.");
+Counter mqttMessagesSentFailed("esp_mqtt_messages_sent_failed", "Number of messages sent to MQTT that are failed.");
 Counter mqttMessagesReceived("esp_mqtt_messages_received", "Number of messages received over MQTT.");
 
 String mqttDisconnectReasonToStr(AsyncMqttClientDisconnectReason reason) {
@@ -118,6 +122,7 @@ void Mqtt::disconnect() {
 }
 
 void Mqtt::onConnect(bool sessionPresent) {
+    mqttConnected.inc();
     logger->println("MQTT: connected");
     for (MqttSub *sub = MqttSub::head; sub != NULL; sub = sub->next) {
         sub->subscribe(&client);
@@ -182,13 +187,16 @@ bool Mqtt::publish(const char *topic, uint8_t qos, bool retain, const char *payl
     do {
         int result = client.publish(topic, qos, retain, payload, len);
         if (result != 0) {
+            mqttMessagesSent.inc();
             return true;
         }
 
+        mqttMessagesSentRetries.inc();
         delay(sleep);
         sleep *= 2;
     } while (retries-- > 0);
 
+    mqttMessagesSentFailed.inc();
     logger->printf("MQTT publish to %s failed after 3 retries\r\n", topic);
     return false;
 }
