@@ -4,6 +4,7 @@
 
 #ifdef ESP32
 #define ESP_VERSION 32
+#include "esp32/rom/rtc.h"
 #else
 #define ESP_VERSION 8266
 extern "C"{
@@ -96,6 +97,23 @@ const MetricProxy taskCount(
     }
 );
 #endif
+
+const MetricProxy resetReason(
+    "esp_reset_reason", "gauge",
+    "ESP reset reason.",
+    [](const char *name, Print *out) {
+        #ifdef ESP32
+        // ESP32 reports the reason reason per CPU.
+        // https://github.com/espressif/arduino-esp32/blob/master/libraries/ESP32/examples/ResetReason/ResetReason.ino
+        for (int i = 0; i < 2; i++) {
+            out->printf("%s{cpu=\"%u\"} %u\n", name, i, rtc_get_reset_reason(i));
+        }
+        #else
+        // https://github.com/esp8266/Arduino/blob/e149829802f351029888c42ab5ce12c0353c42ad/tools/sdk/include/user_interface.h#L51
+        out->printf("%s %u\n", name, ESP.getResetInfoPtr()->reason);
+        #endif
+    }
+);
 
 void printMetrics(Print *out) {
     Metric::writeMetrics(out);
