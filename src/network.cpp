@@ -31,14 +31,25 @@ MetricProxy wifiRssi(
 void connectToWifi() {
     logger->println("WiFi: connecting...");
     WiFi.disconnect(true);
-    setHostname(HOSTNAME);
+
+    #ifdef ESP32
+    // ESP32 hostname must be set before WiFi.mode()
+    WiFi.setHostname(hostname);
+    #endif
+
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
     #ifdef ESP8266
     wifi_set_sleep_type(NONE_SLEEP_T);
     #endif
     #ifdef ESP32
     WiFi.setSleep(false);
+    #endif
+
+    #ifdef ESP8266
+    // ESP8266 hostname must be set after WiFi.begin()
+    WiFi.hostname(hostname);
     #endif
 }
 

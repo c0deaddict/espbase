@@ -8,10 +8,6 @@ void startWifiReconnectTimer() {
     xTimerStart(wifiReconnectTimer, 0);
 }
 
-void setHostname(const char *hostname) {
-    WiFi.setHostname(hostname);
-}
-
 void onWifiEvent(WiFiEvent_t event) {
     logger->printf("[WiFi-event] event: %d\n\r", event);
 

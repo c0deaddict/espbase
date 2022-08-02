@@ -10,10 +10,6 @@ void startWifiReconnectTimer() {
     wifiReconnectTimer.once(2, connectToWifi);
 }
 
-void setHostname(const char *hostname) {
-    WiFi.hostname(hostname);
-}
-
 void esp8266_onWifiConnect(const WiFiEventStationModeGotIP& event) {
     onWifiConnect();
 }
