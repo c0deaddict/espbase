@@ -34,7 +34,7 @@ void connectToWifi() {
 
     #ifdef ESP32
     // ESP32 hostname must be set before WiFi.mode()
-    WiFi.setHostname(hostname);
+    WiFi.setHostname(HOSTNAME);
     #endif
 
     WiFi.mode(WIFI_STA);
@@ -49,7 +49,7 @@ void connectToWifi() {
 
     #ifdef ESP8266
     // ESP8266 hostname must be set after WiFi.begin()
-    WiFi.hostname(hostname);
+    WiFi.hostname(HOSTNAME);
     #endif
 }
 
