@@ -1,6 +1,8 @@
 #include "config.h"
 #include "espbase.h"
 
+#ifdef MQTT_HOST
+
 Device *Device::head = NULL;
 
 Device::Device(const char *configTopic, DeviceAnnounceFn announce)
@@ -35,3 +37,5 @@ MqttSub mqttHassStatus(
         }
     }
 );
+
+#endif // MQTT_HOST
