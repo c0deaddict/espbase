@@ -20,17 +20,17 @@
         {
             "owner": "arduino-libraries",
             "name": "NTPClient",
-            "version": "^3.1.0"
+            "version": "^3.2.1"
         },
         {
             "owner": "bblanchon",
             "name": "ArduinoJson",
-            "version": "^6.18.5"
+            "version": "^6.20.1"
         },
         {
             "owner": "bblanchon",
             "name": "StreamUtils",
-            "version": "^1.6.1"
+            "version": "^1.7.1"
         },
         {
             "owner": "marvinroger",
@@ -38,9 +38,9 @@
             "version": "^0.9.0"
         },
         {
-            "owner": "ottowinter",
+            "owner": "esphome",
             "name": "ESPAsyncWebServer-esphome",
-            "version": "^2.0.1"
+            "version": "^3.0.0"
         }
     ]
 }
