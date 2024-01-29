@@ -169,6 +169,7 @@ void Mqtt::setup() {
     });
     #endif
 
+	client.setClientId(HOSTNAME);
     client.setCredentials(MQTT_USER, MQTT_PASSWORD);
     client.setServer(MQTT_HOST, MQTT_PORT);
 
