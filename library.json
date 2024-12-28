@@ -25,22 +25,22 @@
         {
             "owner": "bblanchon",
             "name": "ArduinoJson",
-            "version": "^6.21.3"
+            "version": "^7.2.1"
         },
         {
             "owner": "bblanchon",
             "name": "StreamUtils",
-            "version": "^1.7.3"
+            "version": "^1.9.0"
         },
         {
             "owner": "heman",
             "name": "AsyncMqttClient-esphome",
-            "version": "^2.0.0"
+            "version": "^2.1.0"
         },
         {
             "owner": "esphome",
             "name": "ESPAsyncWebServer-esphome",
-            "version": "^3.1.0"
+            "version": "^3.3.0"
         }
     ]
 }
